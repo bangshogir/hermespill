@@ -747,6 +747,21 @@ fn handle_webhook_client(
                     let _ = stream.write_all(resp.as_bytes());
                     return;
                 }
+            } else if path == "/hermes" {
+                if let Ok(payload) = serde_json::from_str::<crate::notch::hermes::HermesPayload>(body_str.trim()) {
+                    crate::notch::hermes::ingest(payload);
+                    let resp_body = r#"{"status":"ok","delivered":true}"#;
+                    let resp = format!(
+                        "HTTP/1.1 200 OK\r\n\
+                         Access-Control-Allow-Origin: *\r\n\
+                         Content-Type: application/json\r\n\
+                         Content-Length: {}\r\n\r\n{}",
+                        resp_body.len(),
+                        resp_body
+                    );
+                    let _ = stream.write_all(resp.as_bytes());
+                    return;
+                }
             } else if let Ok(payload) = serde_json::from_str::<WebhookPayload>(body_str.trim()) {
                 let app = payload.app.unwrap_or_else(|| "System".to_string());
                 let title = payload.title.unwrap_or_else(|| "Alert".to_string());

@@ -2,6 +2,14 @@
 
 What's new in each version of HermesPill, written for the people who use it.
 
+## Unreleased (HermesPill)
+
+### Added
+- `SlideKind::Hermes` — a dedicated **Hermes Mission Control** slide and collapsed-pill hint,
+  fed by a new local `/hermes` webhook (`{ headline, tasks[], cost_usd, cron_active }`).
+- `src/notch/hermes.rs` — shared snapshot store + revision counter for the slide.
+- Repaint keying on `hermes::revision()` so the notch updates the moment a snapshot lands.
+
 ## [0.6.1] - 2026-10-27
 
 ### New

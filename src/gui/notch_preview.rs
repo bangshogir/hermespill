@@ -340,6 +340,7 @@ fn sample(kind: SlideKind) -> &'static str {
         SlideKind::Timer => "FOCUS 24:13",
         SlideKind::Calendar => "12m Standup",
         SlideKind::Usage => "Context 64%",
+        SlideKind::Hermes => "Hermes · 2 agents",
         SlideKind::Notifications => "2 new",
         SlideKind::Status => "Ship the notch",
         SlideKind::Wallpaper => "Photo",

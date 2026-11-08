@@ -1703,6 +1703,46 @@ impl Painter {
                     theme::fade(self.pal.text_hi, alpha),
                 );
             }
+            SlideKind::Hermes => {
+                let snap = crate::notch::hermes::store();
+                let s = snap.read();
+                let dot_r = 3.0;
+                let dot_x = shape.left + pad + dot_r;
+                let running = s.tasks.iter().any(|t| t.state.eq_ignore_ascii_case("running"));
+                let color = if running { [0.13, 0.85, 0.53, 1.0] } else { cfg.notch.accent };
+                drop(s);
+                self.dot(t, dot_x, cy, dot_r, theme::fade(color, alpha * 0.85));
+                let text_x = dot_x + dot_r + 9.0;
+                let avail = (shape.right - pad - text_x).max(10.0);
+                let s = snap.read();
+                let text = match s.tasks.len() {
+                    0 => "Hermes idle".to_string(),
+                    n => format!(
+                        "Hermes · {} agent{}",
+                        n,
+                        if n == 1 { "" } else { "s" }
+                    ),
+                };
+                drop(s);
+                let Ok(fmt) =
+                    self.text
+                        .format(family, theme::SIZE_PILL, DWRITE_FONT_WEIGHT_SEMI_BOLD)
+                else {
+                    return;
+                };
+                self.text.set_ellipsis(&fmt);
+                let Ok(layout) = self.text.layout(&text, &fmt, avail, shape.height()) else {
+                    return;
+                };
+                let (_, th) = TextEngine::measure(&layout);
+                self.draw_layout(
+                    t,
+                    &layout,
+                    text_x,
+                    cy - th * 0.5,
+                    theme::fade(self.pal.text_hi, alpha),
+                );
+            }
             SlideKind::Stats => {
                 let stats = crate::stats::snapshot();
                 let metrics = [
@@ -2315,6 +2355,7 @@ impl Painter {
             SlideKind::Clipboard => self.paint_clipboard(t, cfg, body, alpha),
             SlideKind::Notifications => self.paint_notifications(t, cfg, state, body, alpha),
             SlideKind::Usage => self.paint_usage(t, cfg, body, alpha),
+            SlideKind::Hermes => self.paint_hermes(t, cfg, body, alpha),
             SlideKind::Stats => self.paint_stats(t, cfg, body, alpha),
             SlideKind::Timer => self.paint_timer(t, cfg, body, alpha),
             SlideKind::Calendar => self.paint_calendar(t, cfg, body, alpha),
@@ -2861,6 +2902,165 @@ impl Painter {
             self.fill_rrect(t, filled, 2.0, theme::fade(fill_color, alpha));
 
             y += row_h;
+        }
+    }
+
+    fn paint_hermes(
+        &mut self,
+        t: &ID2D1DCRenderTarget,
+        cfg: &AppConfig,
+        body: D2D_RECT_F,
+        alpha: f32,
+    ) {
+        let family = &cfg.notch.font_family;
+        let snap = crate::notch::hermes::store();
+        let s = snap.read().clone();
+        let body_w = body.right - body.left;
+
+        self.label(
+            t,
+            family,
+            "HERMES MISSION CONTROL",
+            theme::SIZE_LABEL,
+            DWRITE_FONT_WEIGHT_EXTRA_BOLD,
+            theme::TRACK_LABEL,
+            body_w,
+            body.left,
+            body.top,
+            theme::fade(self.pal.text_lo, alpha * 0.9),
+        );
+
+        if s.updated_at_secs == 0 {
+            self.label(
+                t,
+                family,
+                "Waiting for the Hermes feeder…",
+                theme::SIZE_BODY,
+                DWRITE_FONT_WEIGHT_SEMI_BOLD,
+                0.0,
+                body_w,
+                body.left,
+                body.top + 28.0,
+                theme::fade(self.pal.text_hi, alpha * 0.85),
+            );
+            return;
+        }
+
+        // Cost / cron summary, top right.
+        let mut right_bits: Vec<String> = Vec::new();
+        if let Some(cost) = s.cost_usd {
+            right_bits.push(format!("${:.2}", cost));
+        }
+        if let Some(cron) = s.cron_active {
+            right_bits.push(format!("{} cron", cron));
+        }
+        if !right_bits.is_empty() {
+            self.label(
+                t,
+                crate::fonts::GEIST_MONO,
+                &right_bits.join("  ·  "),
+                theme::SIZE_LABEL - 2.0,
+                DWRITE_FONT_WEIGHT_BOLD,
+                0.0,
+                body_w,
+                body.left,
+                body.top + 1.0,
+                theme::fade(cfg.notch.accent, alpha),
+            );
+        }
+
+        if s.tasks.is_empty() {
+            let head = s.headline.clone().unwrap_or_else(|| "No active agents".to_string());
+            self.label(
+                t,
+                family,
+                &head,
+                theme::SIZE_BODY,
+                DWRITE_FONT_WEIGHT_SEMI_BOLD,
+                0.0,
+                body_w,
+                body.left,
+                body.top + 30.0,
+                theme::fade(self.pal.text_hi, alpha * 0.85),
+            );
+        } else {
+            let row_h = 24.0;
+            let mut y = body.top + 30.0;
+            for task in s.tasks.iter().take(crate::notch::hermes::MAX_TASKS) {
+                let (dot, state_col) = match task.state.to_ascii_lowercase().as_str() {
+                    "running" => ("●", [0.13, 0.85, 0.53, 1.0]),
+                    "done" => ("●", [0.22, 0.74, 0.97, 1.0]),
+                    "error" | "failed" => ("●", [0.94, 0.27, 0.27, 1.0]),
+                    "queued" => ("●", [1.00, 0.65, 0.00, 1.0]),
+                    _ => ("○", self.pal.text_lo),
+                };
+                self.label(
+                    t,
+                    crate::fonts::GEIST_MONO,
+                    dot,
+                    theme::SIZE_LABEL,
+                    DWRITE_FONT_WEIGHT_BOLD,
+                    0.0,
+                    14.0,
+                    body.left,
+                    y - 1.0,
+                    theme::fade(state_col, alpha),
+                );
+                let name = if task.name.is_empty() {
+                    task.state.clone()
+                } else {
+                    task.name.clone()
+                };
+                self.label(
+                    t,
+                    crate::fonts::GEIST_MONO,
+                    &name,
+                    theme::SIZE_LABEL - 1.0,
+                    DWRITE_FONT_WEIGHT_BOLD,
+                    theme::TRACK_LABEL * 0.4,
+                    body_w - 16.0,
+                    body.left + 16.0,
+                    y,
+                    theme::fade(self.pal.text_hi, alpha * 0.95),
+                );
+                // progress bar, if reported
+                if let Some(pct) = task.progress {
+                    let bar_y = y + 13.0;
+                    let bar_w = body_w - 16.0;
+                    let track = D2D_RECT_F {
+                        left: body.left + 16.0,
+                        top: bar_y,
+                        right: body.left + 16.0 + bar_w,
+                        bottom: bar_y + 3.0,
+                    };
+                    self.fill_rrect(t, track, 1.5, theme::fade(self.pal.well, alpha * 2.4));
+                    let filled = D2D_RECT_F {
+                        left: body.left + 16.0,
+                        top: bar_y,
+                        right: body.left + 16.0 + bar_w * (pct.clamp(0.0, 100.0) / 100.0),
+                        bottom: bar_y + 3.0,
+                    };
+                    self.fill_rrect(t, filled, 1.5, theme::fade(cfg.notch.accent, alpha));
+                    y += row_h + 4.0;
+                } else {
+                    y += row_h;
+                }
+            }
+        }
+
+        if let Some(ago) = crate::notch::hermes::updated_ago() {
+            self.label(
+                t,
+                family,
+                &ago,
+                10.0,
+                DWRITE_FONT_WEIGHT_SEMI_BOLD,
+                0.0,
+                body_w,
+                body.left,
+                body.bottom - 12.0,
+                theme::fade(self.pal.text_lo, alpha * 0.8),
+            );
         }
     }
 

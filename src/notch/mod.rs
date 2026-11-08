@@ -28,6 +28,7 @@ pub mod calendar;
 pub mod clipboard;
 pub mod effects;
 pub mod geom;
+pub mod hermes;
 pub mod hook;
 pub mod keys;
 pub mod layout;

@@ -395,6 +395,7 @@ struct FrameKey {
     notifications: u64,
     /// Bumped by the `/usage` webhook.
     usage: u64,
+    hermes: u64,
     /// Seconds into the running border effect. `None` between runs, so an
     /// effect costs nothing until it plays.
     effect: Option<u32>,
@@ -1941,6 +1942,7 @@ impl NotchWindow {
             media: self.painter.media.revision(),
             notifications: notification_revision,
             usage: crate::notch::notify::usage_revision(),
+            hermes: crate::notch::hermes::revision(),
             // An effect scoped away from the notch's current state draws nothing,
             // so it must not keep the frames coming either.
             effect: self

@@ -430,6 +430,29 @@ curl -X POST http://127.0.0.1:18923/usage \
 > **Important:** add `"Hermes"` to `notch.notifications.allowed_apps` in
 > `%APPDATA%\hermespill\config.json`, or posts from it are rejected.
 
+### The Hermes Mission Control slide
+
+HermesPill adds a dedicated **Hermes Mission Control** slide (`SlideKind::Hermes`) that shows
+your agent fleet live. Push a snapshot to `/hermes`:
+
+```bash
+curl -X POST http://127.0.0.1:18923/hermes \
+  -H "Content-Type: application/json" \
+  -d '{
+        "headline": "2 agents live",
+        "cost_usd": 0.12,
+        "cron_active": 1,
+        "tasks": [
+          {"name":"tokenharbor-farm","state":"running","progress":70},
+          {"name":"build-hermespill","state":"done"}
+        ]
+      }'
+```
+
+`state` may be `running | idle | done | error | queued`. Rows draw a coloured dot (green running,
+blue done, red error, amber queued) plus an optional progress bar. Pick the slide with **Hermes
+Mission Control** in Settings → Slides, or scroll to it.
+
 Two ready-made helpers ship with the Hermes side of this project: `notch_send.py`
 (send a notification / pod / usage update) and `notch_feeder.py` (a small daemon that
 polls agent + cron state and pushes it to the notch).

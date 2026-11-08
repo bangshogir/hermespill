@@ -194,6 +194,8 @@ pub enum SlideKind {
     Notifications,
     /// Claude Code usage: context window, session cost, and rate limits.
     Usage,
+    /// Hermes Mission Control: live agent fleet / task status from the `/hermes` webhook.
+    Hermes,
     /// Live Windows system resource usage and power state.
     Stats,
     /// A Pomodoro focus timer with breaks.
@@ -210,7 +212,7 @@ pub enum SlideKind {
 }
 
 impl SlideKind {
-    pub const ALL: [SlideKind; 13] = [
+    pub const ALL: [SlideKind; 14] = [
         SlideKind::Status,
         SlideKind::Clock,
         SlideKind::Marquee,
@@ -218,6 +220,7 @@ impl SlideKind {
         SlideKind::Media,
         SlideKind::Notifications,
         SlideKind::Usage,
+        SlideKind::Hermes,
         SlideKind::Stats,
         SlideKind::Timer,
         SlideKind::Calendar,
@@ -244,6 +247,7 @@ impl SlideKind {
             SlideKind::Media => "Now Playing",
             SlideKind::Notifications => "Notifications",
             SlideKind::Usage => "Claude Usage",
+            SlideKind::Hermes => "Hermes Mission Control",
             SlideKind::Stats => "Stats",
             SlideKind::Timer => "Focus Timer",
             SlideKind::Calendar => "Calendar",

@@ -51,6 +51,7 @@ pub fn segment_width(kind: SlideKind) -> f32 {
         SlideKind::Clock => 96.0,
         SlideKind::Wallpaper => 96.0,
         SlideKind::Usage => 140.0,
+        SlideKind::Hermes => 170.0,
         SlideKind::Timer => 140.0,
         SlideKind::Controls => 140.0,
         SlideKind::Status => 170.0,
