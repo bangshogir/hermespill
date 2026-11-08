@@ -1,0 +1,147 @@
+# Changelog
+
+What's new in each version of HermesPill, written for the people who use it.
+
+## [0.6.1] - 2026-10-27
+
+### New
+- **Choose and arrange your features in one list.** Settings › General ›
+  Features shows every feature with an on/off switch. Drag a row to change the
+  order the notch and the scroll wheel go through (or focus it and press
+  Alt + Up / Down). A feature you switch off keeps its place for when you
+  switch it back on.
+- **Music pod** beside the notch now shows the album cover next to the live
+  wave, so it reads as music at a glance.
+
+### Improved
+- The right-click menu uses the same dark background and text colours as
+  Settings, so it stays readable on any wallpaper or theme.
+- Options you can combine in Settings › General › Controls (open with, close
+  with, where the menu and the scroll wheel work) are now on/off switches.
+- Release builds can be code-signed, so Windows can show HermesPill's publisher
+  instead of an unknown-app warning once signing is set up.
+
+## [0.6.0] - 2026-10-27
+
+The notch is now as easy to click as it is to hover, and it does a lot more.
+
+### New
+- **Open and close the way you like.** Open with a hover, a click, or both;
+  pick a click gesture (such as Ctrl + click) so it never opens by accident.
+  Close with Esc, a click outside, or by moving the cursor away. Everything
+  is in one place: Settings › General › Controls.
+- **Right-click menu** on the notch's own glass, with smooth animation and
+  arrow keys: Settings, keep open, pause hover, clicks pass through, pages and
+  quit. It works even while clicks pass through.
+- **Never stuck.** The tray menu and the top of Settings can turn click-through
+  off or reset all the notch's controls in one click.
+- **Keyboard shortcuts** you record yourself, such as Ctrl + Alt + N to open or
+  close the notch.
+- **Shelf:** pin files, folders, apps and scripts, plus the newest files of a
+  folder like Screenshots. Drop files on the notch to pin them. HermesPill keeps the
+  path only, never a copy.
+- **Clipboard history** (off by default, memory only): one click copies an
+  earlier snippet again.
+- **Now Playing, redesigned:** a centred player with large artwork, the
+  timeline, and a live wave that moves with the music, plus play controls
+  right on the closed pill.
+- **Split pill and satellite pods:** show more than one thing on the pill, and
+  live activities beside it.
+- **Notch shape:** roundness, shoulders, outline, sheen and shadow, with
+  presets.
+- **Status:** tick items off and add new ones right in the notch.
+- **Windows notifications** from every app, in the Microsoft Store version.
+
+### Improved
+- Hover highlights, a hand cursor and a soft ripple on everything clickable.
+- Settings can be resized, scrolls in every direction, shows every tab, and
+  takes a soft tint of your accent colour.
+- In the Microsoft Store version, starting with Windows uses Windows' own
+  startup setting and respects it if you turn HermesPill off there.
+
+### Fixed
+- Even padding at both ends of a split pill, and moving text sized to fit.
+
+## [0.5.2] - 2026-10-21
+
+### Improved
+- **Lighter, quicker start-up.** When you sign in to Windows, HermesPill now starts
+  with just the notch and its tray icon. The Settings window is only created
+  the first time you open it, so HermesPill uses less memory while it sits in the
+  tray, and Settings reliably comes back when you open it again from the tray.
+
+## [0.5.1] - 2026-10-21
+
+### Fixed
+- **Glass notch looks like one piece again.** On the see-through themes, a
+  faint band showed across the top of the resting pill, and the open notch
+  looked like a separate darker panel under a lighter strip. The notch's
+  shadow was showing through the glass; it now only falls around the notch.
+
+## [0.5.0] - 2026-10-21
+
+The biggest update yet: a redesigned Settings window, three new slides, border
+effects for the notch, and a lighter, smoother notch overall.
+
+### New slides
+- **Focus Timer.** A Pomodoro timer right in the notch: focus rounds, short
+  breaks and a long break after the set. Start, pause and skip from the open
+  notch; the resting pill shows the countdown. The notch tells you when each
+  round ends, and breaks can start on their own.
+- **Calendar.** See what's next without opening anything. Paste your Google
+  Calendar or Outlook iCal link (or point it at an `.ics` file) and the notch
+  shows your next meeting, how long until it starts, and what comes after.
+  Recurring meetings, moved meetings and all-day events are all understood.
+- **Quick Toggles.** One click to mute your microphone, mute your sound, switch
+  Windows between dark and light mode, or keep your PC awake.
+
+### Border effects
+- The notch can now play an effect around its edge: **Rainbow**, **Glass
+  reflection**, **Colour sweep** (left to right, right to left, or there and
+  back), **Breathing glow**, **Aurora**, **Comet**, **Neon sign**,
+  **Heartbeat** and **Fire**.
+- Play an effect every so often (you choose how often, from 5 seconds to 10
+  minutes) or **continuously**.
+- Choose where it plays: **always**, **only on the resting pill**, or **only on
+  the open panel**.
+- A **live preview** in Settings shows the effect on a miniature notch as you
+  change it.
+- Effects cost nothing between runs, and a continuous effect is drawn at a
+  gentle 30 frames a second.
+
+### Alerts
+- **Battery alerts.** A quick alert when you plug your charger in or out, and
+  when your battery runs low (you pick the level). Desktops stay quiet.
+- **Cleaner notification settings.** Add any app by name, remove apps with one
+  click, pick each app's colour, and send yourself a test alert. The local
+  address for scripts and AI agents now comes with a ready-to-copy example.
+
+### A new Settings window
+- **Glass design.** The window is frosted glass over your desktop, with a
+  *Glass strength* slider to make it clearer or more solid.
+- **Your accent colour.** Pick from eight colours or any colour you like;
+  switches, tabs, sliders and the selected page all follow it.
+- **Easier to find things.** Seven pages in three groups (Notch, On screen,
+  App), each split into tabs, plus a **search box** (press Ctrl+F) that jumps
+  straight to any setting.
+- **Floats beside your work.** A fixed-size window that stays above other
+  windows (unpin it if you prefer), with its own title bar.
+- **Sliders everywhere.** Every number is now a slider, and they all line up.
+- **Switches instead of checkboxes**, smooth gliding tabs, and Geist Mono for
+  numbers.
+- **Simpler wallpaper picker.** Browse for an image and see exactly how the
+  notch will frame it, with zoom.
+
+### The notch itself
+- **A smoother shape.** The corners where the notch meets the top of your
+  screen now curve continuously, so the notch looks like part of the display,
+  open or closed.
+- **Uses less of your PC.** The notch only redraws when something on it
+  actually changes, and reads GPU activity less often.
+- **New icon.** HermesPill now uses its own logo in the taskbar, the tray, the
+  Start menu and the installer.
+
+## [0.4.3]
+
+- Whole-PC Stats slide (CPU, memory, GPU and power) and Geist typography.
+- Fixed a crash at startup caused by a bad Devanagari font.

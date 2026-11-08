@@ -1,0 +1,74 @@
+[package]
+name = "hermespill"
+version = "0.6.1"
+edition = "2021"
+description = "A sleek, hardware-accelerated Dynamic Notch for Windows with live background blur, media controls, multi-glass finishes, and desktop notifications."
+license = "MIT"
+
+[dependencies]
+eframe = "0.29"
+egui = "0.29"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dirs = "5.0"
+parking_lot = "0.12"
+
+# Only used by the settings window, to build the wallpaper framing preview.
+# The notch itself decodes through WIC.
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+    "bmp",
+    "gif",
+    "webp",
+] }
+
+[dependencies.windows]
+version = "0.58"
+features = [
+    "Foundation",
+    "Foundation_Collections",
+    "Foundation_Numerics",
+    "ApplicationModel",
+    "UI_Notifications",
+    "UI_Notifications_Management",
+    "Media_Control",
+    "Storage_Streams",
+    "Win32_Foundation",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct2D_Common",
+    "Win32_Graphics_Dwm",
+    "Win32_Media_Audio",
+    "Win32_Media_Audio_Endpoints",
+    "Web_Http",
+    "Win32_Graphics_DirectWrite",
+    "Win32_Graphics_Dxgi_Common",
+    "Win32_Graphics_Gdi",
+    "Win32_Graphics_Imaging",
+    "Win32_System_Com",
+    "Win32_System_Console",
+    "Win32_System_DataExchange",
+    "Win32_System_Memory",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Performance",
+    "Win32_System_Power",
+    "Win32_System_SystemInformation",
+    "Win32_System_Registry",
+    "Win32_System_Threading",
+    "Win32_System_WinRT",
+    "Win32_System_Time",
+    "Win32_Storage_FileSystem",
+    "Win32_Storage_Packaging_Appx",
+    "Win32_Security",
+    "Win32_UI_Input_KeyboardAndMouse",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Shell",
+    "Win32_UI_Controls",
+    "Win32_UI_Controls_Dialogs",
+]
+
+[build-dependencies]
+# Embeds the version resource and app icon into hermespill.exe, so Explorer, the
+# Start Menu and the installer can all see what they are looking at.
+winresource = "0.1"

@@ -1,0 +1,190 @@
+name: Release
+
+# A release is cut for every new version, whichever way it arrives:
+#   - a `vX.Y.Z` tag pushed by hand,
+#   - a version bump in Cargo.toml merged to main (the tag is created here),
+#   - a manual "Run workflow" from the Actions tab.
+# Versions that already have a tag are skipped, so re-runs never duplicate a
+# release.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+    branches:
+      - main
+    paths:
+      - Cargo.toml
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  # SignPath reads the job and its artifacts to verify where a build came from.
+  actions: read
+
+jobs:
+  resolve-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      should-release: ${{ steps.resolve.outputs.should-release }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Resolve version and check for an existing tag
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          manifest_version="$(grep -m1 '^version = ' Cargo.toml | cut -d '"' -f2)"
+
+          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            if [[ "${version}" != "${manifest_version}" ]]; then
+              echo "::error::Tag v${version} does not match Cargo.toml version ${manifest_version}"
+              exit 1
+            fi
+            should_release=true
+          elif git ls-remote --exit-code --tags origin "refs/tags/v${manifest_version}" >/dev/null; then
+            version="${manifest_version}"
+            should_release=false
+            echo "::notice::v${version} is already tagged; nothing to release"
+          else
+            version="${manifest_version}"
+            should_release=true
+          fi
+
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+          echo "should-release=${should_release}" >> "${GITHUB_OUTPUT}"
+
+  build-and-release:
+    needs: resolve-version
+    if: needs.resolve-version.outputs.should-release == 'true'
+    runs-on: windows-latest
+    concurrency:
+      group: release-v${{ needs.resolve-version.outputs.version }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.resolve-version.outputs.version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo registry and build output
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release --locked
+
+      # Code signing through SignPath (see docs/code-signing.md). Off until the
+      # SIGNPATH_API_TOKEN secret and the SIGNPATH_* repository variables are
+      # set; without them the release is built and published unsigned, as
+      # before.
+      - name: Check whether code signing is set up
+        id: signing
+        shell: bash
+        env:
+          SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SIGNPATH_ORGANIZATION_ID: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          SIGNPATH_PROJECT_SLUG: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          SIGNPATH_SIGNING_POLICY_SLUG: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+        run: |
+          if [[ -n "${SIGNPATH_API_TOKEN}" && -n "${SIGNPATH_ORGANIZATION_ID}" \
+                && -n "${SIGNPATH_PROJECT_SLUG}" && -n "${SIGNPATH_SIGNING_POLICY_SLUG}" ]]; then
+            echo "enabled=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "::notice::Code signing is not set up; publishing unsigned binaries."
+          fi
+
+      - name: Upload the app for signing
+        id: upload-app
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: hermespill-app-unsigned
+          path: target/release/hermespill.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Sign the app
+        if: steps.signing.outputs.enabled == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-app.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed/app
+
+      - name: Use the signed app
+        if: steps.signing.outputs.enabled == 'true'
+        shell: pwsh
+        run: Copy-Item "signed/app/hermespill.exe" "target/release/hermespill.exe" -Force
+
+      - name: Build installer with Inno Setup
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppVersion=$env:VERSION "packaging/hermespill.iss"
+
+      - name: Upload the installer for signing
+        id: upload-setup
+        if: steps.signing.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: hermespill-setup-unsigned
+          path: dist/hermespill-setup-*.exe
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Sign the installer
+        if: steps.signing.outputs.enabled == 'true'
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.upload-setup.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed/setup
+
+      - name: Use the signed installer
+        if: steps.signing.outputs.enabled == 'true'
+        shell: pwsh
+        run: Copy-Item "signed/setup/*.exe" "dist/" -Force
+
+      - name: Rename binary with version tag
+        shell: pwsh
+        run: Copy-Item "target/release/hermespill.exe" "hermespill-$env:VERSION.exe"
+
+      - name: Extract this version's notes from CHANGELOG.md
+        shell: bash
+        run: |
+          # Everything under "## [VERSION]" up to the next "## " heading.
+          awk -v v="$VERSION" '
+            index($0, "## [" v "]") == 1 { on = 1; next }
+            on && /^## / { exit }
+            on { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "See the commits below." > release-notes.md
+          fi
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          files: |
+            hermespill-*.exe
+            dist/hermespill-setup-*.exe
+          body_path: release-notes.md
+          generate_release_notes: true
